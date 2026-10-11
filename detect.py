@@ -34,7 +34,6 @@ RULES=[
  ("X-9","S2","꾸민 친밀 '솔직히/사실은'",r'솔직히\s*말하면|놀랍게도|사실은요'),
  ("X-10","S1","격언·아포리즘(추상주어+보장/결정)",r'(정교함|완벽함|속도|크기|노력|과정|구조)[이은는]\s*\S{0,12}[을를]?\s*(보장|결정|만든다|대신하)'),
  ("X-11","S1","구체 없는 단문 격언",r'(?m)^[^0-9\n]{8,34}(거든요|법이다|뿐이다|이다)\.?$'),
- ("X-12","S2","'그래서' 문두 반복",r'(?m)^\s*그래서\s'),
 ]
 def strip_quotes(t):
     # taxonomy Do-NOT: 직접 인용은 탐지 제외.
@@ -81,17 +80,25 @@ def speech_level(txt):
 if __name__=="__main__":
     t=open(sys.argv[1],encoding='utf-8').read()
     run(t,sys.argv[2] if len(sys.argv)>2 else sys.argv[1])
-    # E-2 (룰북): 동일 종결어미 4문장 연속
+    # E-2 (룰북 원문): 동일 종결어미 "~다" 4문장 연속 = S2.
+    # 룰북은 -다체를 명시한다. 합니다체의 '습니다'는 표준 어미라 구조적으로 반복되므로
+    # 위반으로 세지 않고 참고치로만 출력한다.
     ends=re.findall(r'([가-힣]{2,4})[.?!](?:\s|$)', t)
     sfx=[e[-3:] for e in ends]
-    run_max=cur=1; which=sfx[0] if sfx else ''
-    for i in range(1,len(sfx)):
-        if sfx[i]==sfx[i-1]:
-            cur+=1
-            if cur>run_max: run_max, which = cur, sfx[i]
-        else: cur=1
-    if sfx:
-        print(f"  E-2 동일 종결어미 최대 연속: {run_max}회" + (f" ('{which}') <= S2 위반(4회+)" if run_max>=4 else " (4회 미만 정상)"))
+    def longest(pred):
+        best=cur=0; which=''
+        for i,x in enumerate(sfx):
+            if pred(x) and (i==0 or sfx[i-1]==x): cur+=1
+            elif pred(x): cur=1
+            else: cur=0
+            if cur>best: best,which=cur,x
+        return best,which
+    POLITE={'습니다','입니다','합니다','니다'}
+    da_n,da_w   = longest(lambda x: x.endswith('다') and x not in POLITE)
+    pol_n,pol_w = longest(lambda x: x in POLITE)
+    v = da_n>=4
+    print(f"  E-2 '~다' 최대 연속: {da_n}회" + (f" ('{da_w}') <= S2 위반(4회+)" if v else " (4회 미만 정상)"))
+    if pol_n>=4: print(f"     참고: 합니다체 '{pol_w}' {pol_n}회 연속 (룰북 E-2 대상 아님, 리듬 참고치)")
     sl=speech_level(t)
     if sl:
         hae,nida,da,mix,tot=sl
