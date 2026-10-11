@@ -80,25 +80,19 @@ def speech_level(txt):
 if __name__=="__main__":
     t=open(sys.argv[1],encoding='utf-8').read()
     run(t,sys.argv[2] if len(sys.argv)>2 else sys.argv[1])
-    # E-2 (룰북 원문): 동일 종결어미 "~다" 4문장 연속 = S2.
-    # 룰북은 -다체를 명시한다. 합니다체의 '습니다'는 표준 어미라 구조적으로 반복되므로
-    # 위반으로 세지 않고 참고치로만 출력한다.
+    # E-2: 동일 종결어미 4문장 연속 = S2.
+    # 룰북 처방이 "종결어미 다양화"이므로 어미의 동일성을 본다. 합니다체도 대상이다.
+    # ('습니다/합니다/입니다/아닙니다' 는 서로 다른 어미이고, 섞으면 통과한다.
+    #  합니다체는 구조적으로 못 피한다는 주장은 반례로 반증됐다.)
     ends=re.findall(r'([가-힣]{2,4})[.?!](?:\s|$)', t)
     sfx=[e[-3:] for e in ends]
-    def longest(pred):
-        best=cur=0; which=''
-        for i,x in enumerate(sfx):
-            if pred(x) and (i==0 or sfx[i-1]==x): cur+=1
-            elif pred(x): cur=1
-            else: cur=0
-            if cur>best: best,which=cur,x
-        return best,which
-    polite=lambda x: x.endswith('니다')
-    da_n,da_w   = longest(lambda x: x.endswith('다') and not polite(x))
-    pol_n,pol_w = longest(polite)
-    v = da_n>=4
-    print(f"  E-2 '~다' 최대 연속: {da_n}회" + (f" ('{da_w}') <= S2 위반(4회+)" if v else " (4회 미만 정상)"))
-    if pol_n>=4: print(f"     참고: 합니다체 '{pol_w}' {pol_n}회 연속 (룰북 E-2 대상 아님, 리듬 참고치)")
+    best=cur=1 if sfx else 0; which=sfx[0] if sfx else ''
+    for i in range(1,len(sfx)):
+        cur = cur+1 if sfx[i]==sfx[i-1] else 1
+        if cur>best: best,which = cur,sfx[i]
+    if sfx:
+        v = best>=4
+        print(f"  E-2 동일 종결어미 최대 연속: {best}회 ('{which}')" + (" <= S2 위반(4회+)" if v else " (4회 미만 정상)"))
     sl=speech_level(t)
     if sl:
         hae,nida,da,mix,tot=sl
