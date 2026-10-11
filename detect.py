@@ -69,7 +69,8 @@ def run(txt,label):
     return len(s1),len(s2)
 def speech_level(txt):
     import re
-    hae = len(re.findall(r'(어요|아요|해요|예요|에요|네요|거든요|고요|죠)[.?!\n]', txt))
+    txt=strip_quotes(txt)   # S1/S2 와 같은 기준으로 인용·코드 제외
+    hae = len(re.findall(r'([가-힣]요|죠)[.?!\n]', txt))   # 해요체: '요' 종결 일반 + '죠'
     nida= len(re.findall(r'니다[.?!\n]', txt))
     da  = len(re.findall(r'(?<!니)[다][.!\n]', txt))
     tot = hae+nida+da
