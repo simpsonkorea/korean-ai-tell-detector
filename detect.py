@@ -69,9 +69,9 @@ def run(txt,label):
     return len(s1),len(s2)
 def speech_level(txt):
     import re
-    hae = len(re.findall(r'(어요|아요|해요|예요|에요|네요|거든요|고요)[.?!\n]', txt))
-    nida= len(re.findall(r'(습니다|입니다|ㅂ니다|합니다)[.?!\n]', txt))
-    da  = len(re.findall(r'(?<![니하])[다][.!\n]', txt))
+    hae = len(re.findall(r'(어요|아요|해요|예요|에요|네요|거든요|고요|죠)[.?!\n]', txt))
+    nida= len(re.findall(r'니다[.?!\n]', txt))
+    da  = len(re.findall(r'(?<!니)[다][.!\n]', txt))
     tot = hae+nida+da
     if tot==0: return None
     mix = tot - max(hae,nida,da)
@@ -93,9 +93,9 @@ if __name__=="__main__":
             else: cur=0
             if cur>best: best,which=cur,x
         return best,which
-    POLITE={'습니다','입니다','합니다','니다'}
-    da_n,da_w   = longest(lambda x: x.endswith('다') and x not in POLITE)
-    pol_n,pol_w = longest(lambda x: x in POLITE)
+    polite=lambda x: x.endswith('니다')
+    da_n,da_w   = longest(lambda x: x.endswith('다') and not polite(x))
+    pol_n,pol_w = longest(polite)
     v = da_n>=4
     print(f"  E-2 '~다' 최대 연속: {da_n}회" + (f" ('{da_w}') <= S2 위반(4회+)" if v else " (4회 미만 정상)"))
     if pol_n>=4: print(f"     참고: 합니다체 '{pol_w}' {pol_n}회 연속 (룰북 E-2 대상 아님, 리듬 참고치)")
